@@ -5,7 +5,7 @@
 
 | ![박석](https://avatars.githubusercontent.com/u/5678836?v=4) | ![백경탁](https://avatars.githubusercontent.com/u/62689715?v=4) | ![한아름](https://avatars.githubusercontent.com/u/121337152?v=4) | ![위효연](https://avatars.githubusercontent.com/newwhy) |
 | :--------------------------------------------------------------: | :--------------------------------------------------------------: | :--------------------------------------------------------------: | :--------------------------------------------------------------: |
-|            [박석](https://github.com/parksurk)             |            [백경탁](https://github.com/UpstageAILab)             |            [한아름](https://github.com/UpstageAILab)             |            [위효연](https://github.com/newwhy)             |
+|            [박석](https://github.com/parksurk)             |            [백경탁](https://github.com/ktbaek72)             |            [한아름](https://github.com/Kerynhan)             |            [위효연](https://github.com/newwhy)             |
 |                            Lead, R&D                             |                            R&D                             |                            R&D                             |                            R&D                             |
 
 ![박석](./images/team-member-ps.png)
@@ -109,15 +109,12 @@
       - [주요 결과](#주요-결과)
       - [결론](#결론)
     - [5.7. 단위 모델 및 앙상블 모델 (한아름)](#57-단위-모델-및-앙상블-모델-한아름)
+      - [전체 실험 요약](#전체-실험-요약)
+        - [1차 실험 (Submit O)](#1차-실험-submit-o)
+        - [2차 실험 (Submit O)](#2차-실험-submit-o)
+        - [3차 실험 (Submit O)](#3차-실험-submit-o)
+        - [4차 실험 (Submit X)](#4차-실험-submit-x)
     - [5.8. 단위 모델 및 앙상블 모델 (위효연)](#58-단위-모델-및-앙상블-모델-위효연)
-      - [전문가가 되기 전에, 제너럴리스트부터](#전문가가-되기-전에-제너럴리스트부터)
-      - [오분류 이미지](#오분류-이미지)
-      - [참고 ppt 높은 순서](#참고-ppt-높은-순서)
-      - [Oversampling](#oversampling)
-      - [Data Processing](#data-processing)
-      - [Modeling Process](#modeling-process-3)
-      - [문제 해결 방향](#문제-해결-방향)
-      - [추가 Tip](#추가-tip)
   - [6. Result](#6-result)
     - [Leader Board](#leader-board)
       - [Final - Rank 10](#final---rank-10)
@@ -691,6 +688,82 @@ Residual 네트워크에는 입력에서 출력으로의 직접 연결이 포함
 
 
 ### 5.7. 단위 모델 및 앙상블 모델 (한아름)
+
+#### 전체 실험 요약
+- 명확한 근거를 가지고 분석 및 추론을 진행하려고 함
+- 학습 및 검증 패턴을 WanDB 시각화 자료로 모니터링 함.
+- 다양한 모델을 실험해 보았지만 최종적으로 x50 증강 데이터에서 EfficientNet-B7 과 SAR attention 모델 설정을 픽함
+- 3차 실험 결과까지만 Submit 됨
+
+##### 1차 실험 (Submit O)
+조건을 1개씩 추가하며 점수 변화를 살펴봄
+- **결론:**
+  - Augmentation 을 했을 때만 유의미한 변화가 있었음
+- **테스트 모델:** ResNet34/50/101, DenseNet121/169, EfficientNetB0/B4
+
+##### 2차 실험 (Submit O)
+과적합일 경우 필요한 설정 및 데이터 수 증감에 따른 점수 변화를 살펴봄
+- **결론:**
+  - 테스트 데이터를 참고한 Augmentation 설정, Early Stopping, 학습 스케줄러, DropOut, Weight Decay, Batch Normalization 설정 추가 후 눈에 띄는 성능 향상 있었음
+  - x5, x10, x20 의 데이터 수 변화를 주었을 때 F1 Score가 조금씩 변하기는 했지만 크게 유의미하지는 않았음
+- **테스트 모델:** EfficientNetB5/B7, ViT
+
+##### 3차 실험 (Submit O)
+x10 데이터로 폴더별 voting, 클래스별 Voting 방식을 시도해 봄
+- **결론:**
+  - 폴더별 Voting 방식으로 했을 때 유의미한 변화가 있었음
+  - 클래스별 Voting 방식으로 했을 때 눈에 띄게 성과가 안 나오는 클래스들을 확인할 수 있었음
+  - 주로 글씨가 작고 많은, 의료 관련 문서들에 대한 성과가 낮음
+- **테스트 결과 테이블:**
+
+| | Voting | | | Fold | Class | Class |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Run summary:** | **20배 증강** | **10배 증강** | **10배 증강** | **10배 증강** | **10배 증강** |
+| **epoch** | 23 | 26 | 26 | 20 | 15 |
+| **train_acc** | 0.99737 | 0.99666 | 0.99212 | 0.97611 | 0.79196 |
+| **train_f1** | 0.99727 | 0.99649 | 0.99169 | 0.97504 | 0.77546 |
+| **train_loss** | 0.01148 | 0.01465 | 0.03178 | 0.08638 | 0.6477 |
+| **val_acc** | 0.99841 | 0.99204 | 0.99554 | 0.98854 | 0.74745 |
+| **val_f1** | 0.99809 | 0.99148 | 0.9951 | 0.9883 | 0.71618 |
+| **val_loss** | 0.01246 | 0.04146 | 0.02063 | 0.05521 | 0.82301 |
+| **Best Model Test** | EfficientNet-B5 | EfficientNet-B5 | EfficientNet-B7 | EfficientNet-B7 | ViT |
+| | Fold 1 | Fold 4 | | | |
+| **Test Loss** | 0.0032 | 0.03 | 0.014 | 0.0398 | 0.6363 |
+| **Test Acc** | 0.9992 | 0.9939 | 0.9964 | 0.9888 | 0.7713 |
+| **Test F1** | 0.999 | 0.9929 | 0.9962 | 0.9881 | 0.7529 |
+| **Submit F1 Score** | 0.8866 | 0.8796 | 0.9027 | 0.8908 | |
+| **차이** | 0.1124 | 0.1133 | 0.0935 | 0.0973 | |
+
+- **테스트 모델:** EfficientNetB7, ViT
+- **WanDB Monitoring**
+
+    ![WanDB Monitoring](./images/WanDB-Monitoring.png)
+
+##### 4차 실험 (Submit X)
+x50 데이터로 폴더별/클래스별 Voting 방식으로 Attention 기반 CNN-RNN 모델링을 시도해 봄
+- **결론:**
+
+| Voting by Fold | | | Voting by Class | | |
+| --- | --- | --- | --- | --- | --- |
+| **Run summary:** | **EfficientNet-B7** | **SAR_attention** | **Run summary:** | **EfficientNet-B7** | **SAR_attention** |
+| **epoch** | 9 | 13 | **epoch** | 11 | 21 |
+| **train_acc** | 0.99049 | 0.98546 | **train_acc** | 0.99056 | 0.99021 |
+| **train_f1** | 0.98996 | 0.98447 | **train_f1** | 0.99019 | 0.98973 |
+| **train_loss** | 0.04153 | 0.09484 | **train_loss** | 0.04271 | 0.06302 |
+| **val_acc** | 0.99688 | 0.99592 | **val_acc** | 0.99726 | 0.99605 |
+| **val_f1** | 0.99659 | 0.99582 | **val_f1** | 0.99716 | 0.99602 |
+| **val_loss** | 0.02177 | 0.04128 | **val_loss** | 0.02368 | 0.02862 |
+
+- **Model Test**
+
+| | | | Model Test | | |
+| --- | --- | --- | --- | --- | --- |
+| **Mean Loss** | 0.0047 | 0.0075 | **Mean Loss** | 0.0046 | 0.0358 |
+| **Mean Acc** | 0.9989 | 0.9984 | **Mean Acc** | 0.9989 | |
+| **Mean Macro F1** | 0.9989 | 0.9983 | **Mean Macro F1** | 0.9988 | 0.9918 |
+| **Submit F1 Score** | | | **Submit F1 Score** | | |
+
+- **테스트 모델:** EfficientNetB7, ViT attention, SAR attention
 
 ### 5.8. 단위 모델 및 앙상블 모델 (위효연)
 
